@@ -79,33 +79,38 @@ fun StayMatesApp() {
         BottomTab(AppDestination.Profile, "Profile", Icons.Filled.Person),
     )
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val showBottomBar = currentDestination
+        ?.hierarchy
+        ?.any { destination -> bottomTabs.any { it.destination.route == destination.route } } == true
+
     Scaffold(
         bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomTabs.forEach { tab ->
+                        val selected = currentDestination?.hierarchy?.any { it.route == tab.destination.route } == true
 
-            NavigationBar {
-                bottomTabs.forEach { tab ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == tab.destination.route } == true
-
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(tab.destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(tab.destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = {
-                            Icon(imageVector = tab.icon, contentDescription = tab.label)
-                        },
-                        label = {
-                            Text(tab.label)
-                        },
-                    )
+                            },
+                            icon = {
+                                Icon(imageVector = tab.icon, contentDescription = tab.label)
+                            },
+                            label = {
+                                Text(tab.label)
+                            },
+                        )
+                    }
                 }
             }
         },
