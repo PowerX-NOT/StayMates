@@ -1,3 +1,45 @@
 <resources>
     <string name="app_name">StayMates</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_roommates">Roommates</string>
+    <string name="nav_messages">Messages</string>
+    <string name="nav_profile">Profile</string>
+
+    <string name="home_title">Find Your Perfect Place</string>
+    <string name="search_hint">Search location, college...</string>
+    <string name="filter">Filter</string>
+    <string name="verified">Verified</string>
+    <string name="per_month">/month</string>
+
+    <string name="roommate_title">Find Roommates</string>
+    <string name="preferences">Preferences</string>
+    <string name="age">Age</string>
+    <string name="cleanliness">Cleanliness</string>
+    <string name="sleep_schedule">Sleep Schedule</string>
+    <string name="smoking">Smoking</string>
+    <string name="pets">Pets</string>
+    <string name="match_percentage">Match</string>
+
+    <string name="messages_title">Messages</string>
+    <string name="no_messages">No messages yet</string>
+
+    <string name="profile_title">Profile</string>
+    <string name="rent_calculator">Rent Split Calculator</string>
+    <string name="saved_listings">Saved Listings</string>
+    <string name="my_listings">My Listings</string>
+    <string name="settings">Settings</string>
+    <string name="logout">Logout</string>
+
+    <string name="listing_details">Listing Details</string>
+    <string name="amenities">Amenities</string>
+    <string name="description">Description</string>
+    <string name="contact_owner">Contact Owner</string>
+    <string name="save">Save</string>
+
+    <string name="rent_calculator_title">Rent Split Calculator</string>
+    <string name="total_rent">Total Rent</string>
+    <string name="number_of_roommates">Number of Roommates</string>
+    <string name="calculate">Calculate</string>
+    <string name="per_person">Per Person</string>
 </resources>

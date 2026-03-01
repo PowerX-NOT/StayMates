@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/spacing_sm"
+    app:cardCornerRadius="@dimen/corner_radius"
+    app:cardElevation="@dimen/card_elevation">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_md">
+
+        <View
+            android:id="@+id/imageplaceholder"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@color/border"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:text="Modern Studio near Campus"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_md"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/imageplaceholder"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/verifiedBadge"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="@string/verified"
+            android:textColor="@color/chip_text"
+            app:chipBackgroundColor="@color/chip_background"
+            app:chipIcon="@android:drawable/checkbox_on_background"
+            app:chipIconTint="@color/verified_badge"
+            app:chipMinHeight="24dp"
+            app:layout_constraintStart_toEndOf="@id/imageplaceholder"
+            app:layout_constraintTop_toBottomOf="@id/titleText" />
+
+        <TextView
+            android:id="@+id/priceText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/spacing_md"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="$800/month"
+            android:textColor="@color/primary"
+            android:textSize="@dimen/text_lg"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/imageplaceholder"
+            app:layout_constraintTop_toBottomOf="@id/verifiedBadge" />
+
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:drawablePadding="@dimen/spacing_xs"
+            android:text="University District"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_sm"
+            app:drawableStartCompat="@android:drawable/ic_menu_mylocation"
+            app:drawableTint="@color/text_hint"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/imageplaceholder" />
+
+        <TextView
+            android:id="@+id/detailsText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="1 bed, 1 bath"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_sm"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/locationText" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
