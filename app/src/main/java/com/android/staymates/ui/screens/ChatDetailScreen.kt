@@ -49,6 +49,9 @@ import com.android.staymates.data.models.Message
 import com.android.staymates.data.models.Profile
 import com.android.staymates.data.repositories.ChatRepository
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -291,5 +294,16 @@ private fun MessageBubble(
                 )
             }
         }
+    }
+}
+
+private fun formatTimestamp(timestamp: String): String {
+    return try {
+        val instant = Instant.parse(timestamp)
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+            .withZone(ZoneId.systemDefault())
+        formatter.format(instant)
+    } catch (_: Exception) {
+        timestamp
     }
 }
