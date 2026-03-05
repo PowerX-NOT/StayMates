@@ -2,6 +2,7 @@ package com.android.staymates.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,52 +31,42 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-
-data class RoommateMatch(
-    val id: String,
-    val name: String,
-    val age: Int,
-    val occupation: String,
-    val preferences: String,
-    val matchScore: Int,
-)
+import com.android.staymates.data.models.MatchWithProfile
+import com.android.staymates.data.repositories.MatchRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchesScreen() {
-    val matches = remember {
-        listOf(
-            RoommateMatch(
-                id = "1",
-                name = "Priya Sharma",
-                age = 22,
-                occupation = "Engineering Student",
-                preferences = "Non-smoker, vegetarian, quiet hours after 11pm",
-                matchScore = 92,
-            ),
-            RoommateMatch(
-                id = "2",
-                name = "Amit Kumar",
-                age = 24,
-                occupation = "Software Developer",
-                preferences = "Clean, organized, likes cooking",
-                matchScore = 85,
-            ),
-            RoommateMatch(
-                id = "3",
-                name = "Sneha Reddy",
-                age = 21,
-                occupation = "MBA Student",
-                preferences = "Social, early riser, fitness enthusiast",
-                matchScore = 78,
-            ),
-        )
+    val repository = remember { MatchRepository() }
+    val coroutineScope = rememberCoroutineScope()
+    var matches by remember { mutableStateOf<List<MatchWithProfile>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                isLoading = true
+                matches = repository.getMatchesForUser("550e8400-e29b-41d4-a716-446655440001")
+                error = null
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
     Scaffold(
@@ -89,22 +81,68 @@ fun MatchesScreen() {
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(matches, key = { it.id }) { match ->
-                MatchCard(match = match)
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Error loading matches: $error",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            matches.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No matches found",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(matches, key = { it.match.id }) { matchWithProfile ->
+                        MatchCard(matchWithProfile = matchWithProfile)
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MatchCard(match: RoommateMatch) {
+private fun MatchCard(matchWithProfile: MatchWithProfile) {
+    val profile = matchWithProfile.profile
+    val match = matchWithProfile.match
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -142,7 +180,7 @@ private fun MatchCard(match: RoommateMatch) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = match.name,
+                        text = profile.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -162,7 +200,7 @@ private fun MatchCard(match: RoommateMatch) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "${match.age} • ${match.occupation}",
+                    text = "${profile.age} • ${profile.occupation}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -170,7 +208,7 @@ private fun MatchCard(match: RoommateMatch) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = match.preferences,
+                    text = profile.preferences,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,

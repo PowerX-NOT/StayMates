@@ -2,6 +2,7 @@ package com.android.staymates.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,48 +31,46 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-
-data class ChatConversation(
-    val id: String,
-    val name: String,
-    val lastMessage: String,
-    val timestamp: String,
-    val unreadCount: Int,
-)
+import com.android.staymates.data.models.ConversationWithDetails
+import com.android.staymates.data.repositories.ChatRepository
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen() {
-    val conversations = remember {
-        listOf(
-            ChatConversation(
-                id = "1",
-                name = "Priya Sharma",
-                lastMessage = "Yes, I'm interested in viewing the place tomorrow",
-                timestamp = "2h ago",
-                unreadCount = 2,
-            ),
-            ChatConversation(
-                id = "2",
-                name = "Amit Kumar",
-                lastMessage = "Thanks for the details!",
-                timestamp = "5h ago",
-                unreadCount = 0,
-            ),
-            ChatConversation(
-                id = "3",
-                name = "Sneha Reddy",
-                lastMessage = "Is the deposit negotiable?",
-                timestamp = "1d ago",
-                unreadCount = 1,
-            ),
-        )
+fun ChatScreen(onChatClick: (String) -> Unit = {}) {
+    val repository = remember { ChatRepository() }
+    val coroutineScope = rememberCoroutineScope()
+    var conversations by remember { mutableStateOf<List<ConversationWithDetails>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                isLoading = true
+                conversations = repository.getConversationsForUser("550e8400-e29b-41d4-a716-446655440001")
+                error = null
+            } catch (e: Exception) {
+                error = e.message
+            } finally {
+                isLoading = false
+            }
+        }
     }
 
     Scaffold(
@@ -85,26 +85,102 @@ fun ChatScreen() {
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(conversations, key = { it.id }) { conversation ->
-                ChatConversationCard(conversation = conversation)
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Error loading conversations: $error",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            conversations.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No conversations yet",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    items(conversations, key = { it.conversation.id }) { conversationDetails ->
+                        ChatConversationCard(
+                            conversationDetails = conversationDetails,
+                            onClick = { onChatClick(conversationDetails.conversation.id) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+private fun formatTimestamp(timestamp: String): String {
+    return try {
+        val instant = Instant.parse(timestamp)
+        val now = Instant.now()
+        val minutes = ChronoUnit.MINUTES.between(instant, now)
+        val hours = ChronoUnit.HOURS.between(instant, now)
+        val days = ChronoUnit.DAYS.between(instant, now)
+
+        when {
+            minutes < 60 -> "${minutes}m ago"
+            hours < 24 -> "${hours}h ago"
+            days < 7 -> "${days}d ago"
+            else -> {
+                val formatter = DateTimeFormatter.ofPattern("MMM d")
+                    .withZone(ZoneId.systemDefault())
+                formatter.format(instant)
+            }
+        }
+    } catch (e: Exception) {
+        timestamp
+    }
+}
+
 @Composable
-private fun ChatConversationCard(conversation: ChatConversation) {
+private fun ChatConversationCard(
+    conversationDetails: ConversationWithDetails,
+    onClick: () -> Unit
+) {
+    val otherParticipant = conversationDetails.otherParticipant
+    val lastMessage = conversationDetails.lastMessage
+    val unreadCount = conversationDetails.unreadCount
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
@@ -138,12 +214,12 @@ private fun ChatConversationCard(conversation: ChatConversation) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = conversation.name,
+                        text = otherParticipant.name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = conversation.timestamp,
+                        text = lastMessage?.createdAt?.let { formatTimestamp(it) } ?: "",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -157,7 +233,7 @@ private fun ChatConversationCard(conversation: ChatConversation) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = conversation.lastMessage,
+                        text = lastMessage?.content ?: "No messages yet",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -165,14 +241,14 @@ private fun ChatConversationCard(conversation: ChatConversation) {
                         modifier = Modifier.weight(1f),
                     )
 
-                    if (conversation.unreadCount > 0) {
+                    if (unreadCount > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             color = MaterialTheme.colorScheme.primary,
                             shape = CircleShape,
                         ) {
                             Text(
-                                text = conversation.unreadCount.toString(),
+                                text = unreadCount.toString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

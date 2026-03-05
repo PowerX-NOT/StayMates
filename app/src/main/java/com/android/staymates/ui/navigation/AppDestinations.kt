@@ -8,6 +8,9 @@ sealed class AppDestination(val route: String) {
     data object CreateListing : AppDestination("createListing")
     data object Matches : AppDestination("matches")
     data object Chat : AppDestination("chat")
+    data object ChatDetail : AppDestination("chatDetail/{conversationId}") {
+        fun createRoute(conversationId: String): String = "chatDetail/$conversationId"
+    }
     data object Calculator : AppDestination("calculator")
     data object Profile : AppDestination("profile")
 }

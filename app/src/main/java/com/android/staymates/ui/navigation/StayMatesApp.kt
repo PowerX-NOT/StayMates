@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.android.staymates.ui.screens.CalculatorScreen
+import com.android.staymates.ui.screens.ChatDetailScreen
 import com.android.staymates.ui.screens.ChatScreen
 import com.android.staymates.ui.screens.CreateListingScreen
 import com.android.staymates.ui.screens.Listing
@@ -156,7 +157,28 @@ fun StayMatesApp() {
             }
 
             composable(AppDestination.Matches.route) { MatchesScreen() }
-            composable(AppDestination.Chat.route) { ChatScreen() }
+
+            composable(AppDestination.Chat.route) {
+                ChatScreen(
+                    onChatClick = { conversationId ->
+                        navController.navigate(AppDestination.ChatDetail.createRoute(conversationId))
+                    }
+                )
+            }
+
+            composable(
+                route = AppDestination.ChatDetail.route,
+                arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val conversationId = backStackEntry.arguments?.getString("conversationId")
+                conversationId?.let {
+                    ChatDetailScreen(
+                        conversationId = it,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
             composable(AppDestination.Calculator.route) { CalculatorScreen() }
             composable(AppDestination.Profile.route) { ProfileScreen() }
         }
