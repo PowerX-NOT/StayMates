@@ -10,22 +10,50 @@ class MatchRepository(private val userId: String) {
     private val client = SupabaseClient.instance
 
     suspend fun getMatches(): List<MatchWithProfile> {
-        val matches = client.from("matches")
-            .select()
-            .decodeList<Match>()
-            .filter { it.userId == userId || it.matchedUserId == userId }
+        val matchesAsUser = try {
+            client.from("matches")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+                .decodeList<Match>()
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+        val matchesAsMatchedUser = try {
+            client.from("matches")
+                .select {
+                    filter {
+                        eq("matched_user_id", userId)
+                    }
+                }
+                .decodeList<Match>()
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+        val allMatches = matchesAsUser + matchesAsMatchedUser
 
         val matchesWithProfiles = mutableListOf<MatchWithProfile>()
 
-        for (match in matches) {
+        for (match in allMatches) {
             val profileId = if (match.userId == userId) match.matchedUserId else match.userId
-            val profile = client.from("profiles")
-                .select()
-                .decodeList<Profile>()
-                .firstOrNull { it.id == profileId }
 
-            if (profile != null) {
-                matchesWithProfiles.add(MatchWithProfile(match, profile))
+            try {
+                val profile = client.from("profiles")
+                    .select {
+                        filter {
+                            eq("id", profileId)
+                        }
+                    }
+                    .decodeSingleOrNull<Profile>()
+
+                if (profile != null) {
+                    matchesWithProfiles.add(MatchWithProfile(match, profile))
+                }
+            } catch (_: Exception) {
             }
         }
 

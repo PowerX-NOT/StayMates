@@ -13,35 +13,68 @@ class ChatRepository(private val userId: String) {
     private val client = SupabaseClient.instance
 
     suspend fun getConversations(): List<ConversationWithDetails> {
-        val conversations = client.from("conversations")
-            .select()
-            .decodeList<Conversation>()
-            .filter { it.participant1Id == userId || it.participant2Id == userId }
+        val conversationsAsParticipant1 = try {
+            client.from("conversations")
+                .select {
+                    filter {
+                        eq("participant_1_id", userId)
+                    }
+                }
+                .decodeList<Conversation>()
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+        val conversationsAsParticipant2 = try {
+            client.from("conversations")
+                .select {
+                    filter {
+                        eq("participant_2_id", userId)
+                    }
+                }
+                .decodeList<Conversation>()
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+        val allConversations = conversationsAsParticipant1 + conversationsAsParticipant2
 
         val conversationsWithDetails = mutableListOf<ConversationWithDetails>()
 
-        for (conversation in conversations) {
+        for (conversation in allConversations) {
             val otherParticipantId = if (conversation.participant1Id == userId) {
                 conversation.participant2Id
             } else {
                 conversation.participant1Id
             }
 
-            val otherParticipant = client.from("profiles")
-                .select()
-                .decodeList<Profile>()
-                .firstOrNull { it.id == otherParticipantId }
+            try {
+                val otherParticipant = client.from("profiles")
+                    .select {
+                        filter {
+                            eq("id", otherParticipantId)
+                        }
+                    }
+                    .decodeSingleOrNull<Profile>()
 
-            val messages = client.from("messages")
-                .select()
-                .decodeList<Message>()
-                .filter { it.conversationId == conversation.id }
-                .sortedByDescending { it.createdAt }
+                if (otherParticipant == null) continue
 
-            val lastMessage = messages.firstOrNull()
-            val unreadCount = messages.count { !it.isRead && it.senderId != userId }
+                val messages = try {
+                    client.from("messages")
+                        .select {
+                            filter {
+                                eq("conversation_id", conversation.id)
+                            }
+                        }
+                        .decodeList<Message>()
+                        .sortedByDescending { it.createdAt }
+                } catch (_: Exception) {
+                    emptyList()
+                }
 
-            if (otherParticipant != null) {
+                val lastMessage = messages.firstOrNull()
+                val unreadCount = messages.count { !it.isRead && it.senderId != userId }
+
                 conversationsWithDetails.add(
                     ConversationWithDetails(
                         conversation = conversation,
@@ -50,6 +83,7 @@ class ChatRepository(private val userId: String) {
                         unreadCount = unreadCount
                     )
                 )
+            } catch (_: Exception) {
             }
         }
 
@@ -57,11 +91,18 @@ class ChatRepository(private val userId: String) {
     }
 
     suspend fun getMessagesForConversation(conversationId: String): List<Message> {
-        return client.from("messages")
-            .select()
-            .decodeList<Message>()
-            .filter { it.conversationId == conversationId }
-            .sortedBy { it.createdAt }
+        return try {
+            client.from("messages")
+                .select {
+                    filter {
+                        eq("conversation_id", conversationId)
+                    }
+                }
+                .decodeList<Message>()
+                .sortedBy { it.createdAt }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     suspend fun sendMessage(conversationId: String, senderId: String, content: String) {
@@ -86,32 +127,57 @@ class ChatRepository(private val userId: String) {
     }
 
     suspend fun markMessagesAsRead(conversationId: String, userId: String) {
-        val messages = client.from("messages")
-            .select()
-            .decodeList<Message>()
-            .filter { it.conversationId == conversationId && it.senderId != userId && !it.isRead }
-
-        messages.forEach { message ->
-            client.from("messages")
-                .update(mapOf("is_read" to true)) {
+        try {
+            val messages = client.from("messages")
+                .select {
                     filter {
-                        eq("id", message.id)
+                        eq("conversation_id", conversationId)
+                        neq("sender_id", userId)
+                        eq("is_read", false)
                     }
                 }
+                .decodeList<Message>()
+
+            messages.forEach { message ->
+                try {
+                    client.from("messages")
+                        .update(mapOf("is_read" to true)) {
+                            filter {
+                                eq("id", message.id)
+                            }
+                        }
+                } catch (_: Exception) {
+                }
+            }
+        } catch (_: Exception) {
         }
     }
 
     suspend fun getConversation(conversationId: String): Conversation? {
-        return client.from("conversations")
-            .select()
-            .decodeList<Conversation>()
-            .firstOrNull { it.id == conversationId }
+        return try {
+            client.from("conversations")
+                .select {
+                    filter {
+                        eq("id", conversationId)
+                    }
+                }
+                .decodeSingleOrNull<Conversation>()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun getProfile(profileId: String): Profile? {
-        return client.from("profiles")
-            .select()
-            .decodeList<Profile>()
-            .firstOrNull { it.id == profileId }
+        return try {
+            client.from("profiles")
+                .select {
+                    filter {
+                        eq("id", profileId)
+                    }
+                }
+                .decodeSingleOrNull<Profile>()
+        } catch (_: Exception) {
+            null
+        }
     }
 }
