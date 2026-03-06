@@ -123,4 +123,28 @@ class AuthRepository {
         val userId = getCurrentUserId() ?: return null
         return getProfile(userId)
     }
+
+    suspend fun updateProfile(
+        userId: String,
+        name: String,
+        age: Int,
+        occupation: String,
+        preferences: String,
+        bio: String,
+    ) {
+        client.from("profiles")
+            .update(
+                buildJsonObject {
+                    put("name", name)
+                    put("age", age)
+                    put("occupation", occupation)
+                    put("preferences", preferences)
+                    put("bio", bio)
+                }
+            ) {
+                filter {
+                    eq("id", userId)
+                }
+            }
+    }
 }

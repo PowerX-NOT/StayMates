@@ -15,4 +15,8 @@ sealed class AppDestination(val route: String) {
     }
     data object Calculator : AppDestination("calculator")
     data object Profile : AppDestination("profile")
+    data object ProfilePersonalInfo : AppDestination("profile/personal")
+    data object ProfilePreferences : AppDestination("profile/preferences")
+    data object ProfileVerifyEmail : AppDestination("profile/verifyEmail")
+    data object ProfileMyListings : AppDestination("profile/myListings")
 }

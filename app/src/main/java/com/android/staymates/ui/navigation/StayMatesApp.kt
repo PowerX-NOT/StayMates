@@ -40,6 +40,10 @@ import com.android.staymates.ui.screens.ListingsScreen
 import com.android.staymates.ui.screens.LoginScreen
 import com.android.staymates.ui.screens.MatchesScreen
 import com.android.staymates.ui.screens.ProfileScreen
+import com.android.staymates.ui.screens.ProfileMyListingsScreen
+import com.android.staymates.ui.screens.ProfilePersonalInfoScreen
+import com.android.staymates.ui.screens.ProfilePreferencesScreen
+import com.android.staymates.ui.screens.ProfileVerifyEmailScreen
 import com.android.staymates.ui.screens.RegisterScreen
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -233,6 +237,18 @@ fun StayMatesApp() {
             composable(AppDestination.Profile.route) {
                 ProfileScreen(
                     userId = userId,
+                    onNavigatePersonalInfo = {
+                        navController.navigate(AppDestination.ProfilePersonalInfo.route)
+                    },
+                    onNavigatePreferences = {
+                        navController.navigate(AppDestination.ProfilePreferences.route)
+                    },
+                    onNavigateVerifyEmail = {
+                        navController.navigate(AppDestination.ProfileVerifyEmail.route)
+                    },
+                    onNavigateMyListings = {
+                        navController.navigate(AppDestination.ProfileMyListings.route)
+                    },
                     onLogout = {
                         coroutineScope.launch {
                             authRepository.signOut()
@@ -243,6 +259,42 @@ fun StayMatesApp() {
                             }
                         }
                     }
+                )
+            }
+
+            composable(AppDestination.ProfilePersonalInfo.route) {
+                val currentUserId = userId
+                if (currentUserId != null) {
+                    ProfilePersonalInfoScreen(
+                        userId = currentUserId,
+                        onBack = { navController.popBackStack() },
+                    )
+                } else {
+                    navController.popBackStack()
+                }
+            }
+
+            composable(AppDestination.ProfilePreferences.route) {
+                val currentUserId = userId
+                if (currentUserId != null) {
+                    ProfilePreferencesScreen(
+                        userId = currentUserId,
+                        onBack = { navController.popBackStack() },
+                    )
+                } else {
+                    navController.popBackStack()
+                }
+            }
+
+            composable(AppDestination.ProfileVerifyEmail.route) {
+                ProfileVerifyEmailScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(AppDestination.ProfileMyListings.route) {
+                ProfileMyListingsScreen(
+                    onBack = { navController.popBackStack() },
                 )
             }
         }
