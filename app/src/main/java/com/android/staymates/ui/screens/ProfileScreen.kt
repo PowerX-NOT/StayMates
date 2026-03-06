@@ -40,7 +40,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +47,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.android.staymates.data.models.Profile
 import com.android.staymates.data.repositories.AuthRepository
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,22 +54,29 @@ fun ProfileScreen(
     userId: String?,
     onLogout: () -> Unit = {}
 ) {
-    val coroutineScope = rememberCoroutineScope()
     var userProfile by remember { mutableStateOf<Profile?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
-        if (userId != null) {
-            val repository = AuthRepository()
-            coroutineScope.launch {
-                try {
-                    userProfile = repository.getCurrentUserProfile()
-                } catch (e: Exception) {
-                } finally {
-                    isLoading = false
-                }
+        isLoading = true
+        error = null
+        userProfile = null
+
+        if (userId == null) {
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        val repository = AuthRepository()
+        try {
+            userProfile = repository.getProfile(userId)
+            if (userProfile == null) {
+                error = "Profile not found"
             }
-        } else {
+        } catch (e: Exception) {
+            error = e.message
+        } finally {
             isLoading = false
         }
     }
@@ -140,6 +145,15 @@ fun ProfileScreen(
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
+
+                        if (error != null) {
+                            Text(
+                                text = error ?: "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
 
                         val profileSnapshot = userProfile
                         if (profileSnapshot != null) {

@@ -45,6 +45,7 @@ class AuthRepository {
                 this.email = email
                 this.password = password
             }
+            ensureProfileExists()
             return true
         } catch (e: Exception) {
             throw e
@@ -71,15 +72,55 @@ class AuthRepository {
         return getCurrentUserId() != null
     }
 
-    suspend fun getCurrentUserProfile(): Profile? {
-        val userId = getCurrentUserId() ?: return null
+    suspend fun getProfile(userId: String): Profile? {
         return try {
             client.from("profiles")
-                .select()
+                .select {
+                    filter {
+                        eq("id", userId)
+                    }
+                }
                 .decodeList<Profile>()
-                .firstOrNull { it.id == userId }
+                .firstOrNull()
         } catch (e: Exception) {
             null
         }
+    }
+
+    suspend fun ensureProfileExists(): Profile? {
+        val user = try {
+            client.auth.currentUserOrNull()
+        } catch (e: Exception) {
+            null
+        } ?: return null
+
+        val userId = user.id
+        val existing = getProfile(userId)
+        if (existing != null) return existing
+
+        val fallbackName = user.email?.substringBefore("@")?.takeIf { it.isNotBlank() } ?: "User"
+
+        return try {
+            client.from("profiles")
+                .insert(
+                    buildJsonObject {
+                        put("id", userId)
+                        put("name", fallbackName)
+                        put("age", 0)
+                        put("occupation", "")
+                        put("preferences", "")
+                        put("bio", "")
+                        put("is_verified", false)
+                    }
+                )
+            getProfile(userId)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun getCurrentUserProfile(): Profile? {
+        val userId = getCurrentUserId() ?: return null
+        return getProfile(userId)
     }
 }
