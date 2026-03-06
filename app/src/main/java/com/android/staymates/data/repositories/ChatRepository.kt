@@ -9,10 +9,10 @@ import io.github.jan.supabase.postgrest.from
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-class ChatRepository {
+class ChatRepository(private val userId: String) {
     private val client = SupabaseClient.instance
 
-    suspend fun getConversationsForUser(userId: String): List<ConversationWithDetails> {
+    suspend fun getConversations(): List<ConversationWithDetails> {
         val conversations = client.from("conversations")
             .select()
             .decodeList<Conversation>()

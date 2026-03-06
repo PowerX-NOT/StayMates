@@ -1,6 +1,8 @@
 package com.android.staymates.ui.navigation
 
 sealed class AppDestination(val route: String) {
+    data object Login : AppDestination("login")
+    data object Register : AppDestination("register")
     data object Listings : AppDestination("listings")
     data object ListingDetails : AppDestination("listingDetails/{listingId}") {
         fun createRoute(listingId: String): String = "listingDetails/$listingId"

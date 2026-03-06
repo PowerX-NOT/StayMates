@@ -57,11 +57,23 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun ChatDetailScreen(
     conversationId: String,
+    userId: String?,
     onBack: () -> Unit
 ) {
-    val repository = remember { ChatRepository() }
     val coroutineScope = rememberCoroutineScope()
-    val currentUserId = "550e8400-e29b-41d4-a716-446655440001"
+
+    if (userId == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("User not logged in")
+        }
+        return
+    }
+
+    val repository = ChatRepository(userId)
+    val currentUserId = userId
 
     var messages by remember { mutableStateOf<List<Message>>(emptyList()) }
     var conversation by remember { mutableStateOf<Conversation?>(null) }

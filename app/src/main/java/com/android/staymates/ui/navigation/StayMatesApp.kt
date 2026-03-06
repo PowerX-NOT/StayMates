@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -25,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.android.staymates.data.repositories.AuthRepository
 import com.android.staymates.ui.screens.CalculatorScreen
 import com.android.staymates.ui.screens.ChatDetailScreen
 import com.android.staymates.ui.screens.ChatScreen
@@ -32,13 +34,18 @@ import com.android.staymates.ui.screens.CreateListingScreen
 import com.android.staymates.ui.screens.Listing
 import com.android.staymates.ui.screens.ListingDetailsScreen
 import com.android.staymates.ui.screens.ListingsScreen
+import com.android.staymates.ui.screens.LoginScreen
 import com.android.staymates.ui.screens.MatchesScreen
 import com.android.staymates.ui.screens.ProfileScreen
+import com.android.staymates.ui.screens.RegisterScreen
 import java.util.UUID
 
 @Composable
 fun StayMatesApp() {
     val navController = rememberNavController()
+    val authRepository = remember { AuthRepository() }
+    val (userId, setUserId) = remember { mutableStateOf(authRepository.getCurrentUserId()) }
+    val (isLoggedIn, setIsLoggedIn) = remember { mutableStateOf(userId != null) }
 
     val listings = remember {
         mutableStateListOf(
@@ -82,7 +89,7 @@ fun StayMatesApp() {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val showBottomBar = currentDestination
+    val showBottomBar = isLoggedIn && currentDestination
         ?.hierarchy
         ?.any { destination -> bottomTabs.any { it.destination.route == destination.route } } == true
 
@@ -118,9 +125,37 @@ fun StayMatesApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = AppDestination.Listings.route,
+            startDestination = if (isLoggedIn) AppDestination.Listings.route else AppDestination.Login.route,
             modifier = Modifier.padding(innerPadding),
         ) {
+            composable(AppDestination.Login.route) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        setUserId(authRepository.getCurrentUserId())
+                        setIsLoggedIn(true)
+                        navController.navigate(AppDestination.Listings.route) {
+                            popUpTo(AppDestination.Login.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(AppDestination.Register.route)
+                    }
+                )
+            }
+
+            composable(AppDestination.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = {
+                        setUserId(authRepository.getCurrentUserId())
+                        setIsLoggedIn(true)
+                        navController.navigate(AppDestination.Listings.route) {
+                            popUpTo(AppDestination.Login.route) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
             composable(AppDestination.Listings.route) {
                 ListingsScreen(
                     listings = listings,
@@ -156,10 +191,13 @@ fun StayMatesApp() {
                 )
             }
 
-            composable(AppDestination.Matches.route) { MatchesScreen() }
+            composable(AppDestination.Matches.route) {
+                MatchesScreen(userId = userId)
+            }
 
             composable(AppDestination.Chat.route) {
                 ChatScreen(
+                    userId = userId,
                     onChatClick = { conversationId ->
                         navController.navigate(AppDestination.ChatDetail.createRoute(conversationId))
                     }
@@ -174,6 +212,7 @@ fun StayMatesApp() {
                 conversationId?.let {
                     ChatDetailScreen(
                         conversationId = it,
+                        userId = userId,
                         onBack = { navController.popBackStack() }
                     )
                 }

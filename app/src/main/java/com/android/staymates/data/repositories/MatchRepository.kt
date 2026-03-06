@@ -6,10 +6,10 @@ import com.android.staymates.data.models.MatchWithProfile
 import com.android.staymates.data.models.Profile
 import io.github.jan.supabase.postgrest.from
 
-class MatchRepository {
+class MatchRepository(private val userId: String) {
     private val client = SupabaseClient.instance
 
-    suspend fun getMatchesForUser(userId: String): List<MatchWithProfile> {
+    suspend fun getMatches(): List<MatchWithProfile> {
         val matches = client.from("matches")
             .select()
             .decodeList<Match>()

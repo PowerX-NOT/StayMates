@@ -52,18 +52,27 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(onChatClick: (String) -> Unit = {}) {
-    val repository = remember { ChatRepository() }
+fun ChatScreen(
+    userId: String?,
+    onChatClick: (String) -> Unit = {}
+) {
     val coroutineScope = rememberCoroutineScope()
     var conversations by remember { mutableStateOf<List<ConversationWithDetails>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userId) {
+        if (userId == null) {
+            error = "User not logged in"
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        val repository = ChatRepository(userId)
         coroutineScope.launch {
             try {
                 isLoading = true
-                conversations = repository.getConversationsForUser("550e8400-e29b-41d4-a716-446655440001")
+                conversations = repository.getConversations()
                 error = null
             } catch (e: Exception) {
                 error = e.message

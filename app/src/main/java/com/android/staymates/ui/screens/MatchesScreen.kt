@@ -48,18 +48,24 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchesScreen() {
-    val repository = remember { MatchRepository() }
+fun MatchesScreen(userId: String?) {
     val coroutineScope = rememberCoroutineScope()
     var matches by remember { mutableStateOf<List<MatchWithProfile>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userId) {
+        if (userId == null) {
+            error = "User not logged in"
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        val repository = MatchRepository(userId)
         coroutineScope.launch {
             try {
                 isLoading = true
-                matches = repository.getMatchesForUser("550e8400-e29b-41d4-a716-446655440001")
+                matches = repository.getMatches()
                 error = null
             } catch (e: Exception) {
                 error = e.message
