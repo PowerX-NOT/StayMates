@@ -13,15 +13,17 @@ class AuthRepository {
 
     suspend fun signUp(email: String, password: String, profile: Profile): Boolean {
         try {
-            client.auth.signUpWith(Email) {
+            val authResult = client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
 
+            val userId = authResult?.id ?: throw Exception("Failed to create user account")
+
             client.from("profiles")
                 .insert(
                     buildJsonObject {
-                        put("id", profile.id)
+                        put("id", userId)
                         put("name", profile.name)
                         put("age", profile.age)
                         put("occupation", profile.occupation)

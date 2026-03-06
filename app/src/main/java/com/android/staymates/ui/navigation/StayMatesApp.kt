@@ -13,10 +13,13 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -38,14 +41,22 @@ import com.android.staymates.ui.screens.LoginScreen
 import com.android.staymates.ui.screens.MatchesScreen
 import com.android.staymates.ui.screens.ProfileScreen
 import com.android.staymates.ui.screens.RegisterScreen
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 @Composable
 fun StayMatesApp() {
     val navController = rememberNavController()
     val authRepository = remember { AuthRepository() }
-    val (userId, setUserId) = remember { mutableStateOf(authRepository.getCurrentUserId()) }
-    val (isLoggedIn, setIsLoggedIn) = remember { mutableStateOf(userId != null) }
+    val coroutineScope = rememberCoroutineScope()
+
+    var userId by remember { mutableStateOf(authRepository.getCurrentUserId()) }
+    var isLoggedIn by remember { mutableStateOf(userId != null) }
+
+    LaunchedEffect(Unit) {
+        userId = authRepository.getCurrentUserId()
+        isLoggedIn = userId != null
+    }
 
     val listings = remember {
         mutableStateListOf(
@@ -131,8 +142,8 @@ fun StayMatesApp() {
             composable(AppDestination.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        setUserId(authRepository.getCurrentUserId())
-                        setIsLoggedIn(true)
+                        userId = authRepository.getCurrentUserId()
+                        isLoggedIn = true
                         navController.navigate(AppDestination.Listings.route) {
                             popUpTo(AppDestination.Login.route) { inclusive = true }
                         }
@@ -146,8 +157,8 @@ fun StayMatesApp() {
             composable(AppDestination.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        setUserId(authRepository.getCurrentUserId())
-                        setIsLoggedIn(true)
+                        userId = authRepository.getCurrentUserId()
+                        isLoggedIn = true
                         navController.navigate(AppDestination.Listings.route) {
                             popUpTo(AppDestination.Login.route) { inclusive = true }
                         }
@@ -219,7 +230,21 @@ fun StayMatesApp() {
             }
 
             composable(AppDestination.Calculator.route) { CalculatorScreen() }
-            composable(AppDestination.Profile.route) { ProfileScreen() }
+            composable(AppDestination.Profile.route) {
+                ProfileScreen(
+                    userId = userId,
+                    onLogout = {
+                        coroutineScope.launch {
+                            authRepository.signOut()
+                            userId = null
+                            isLoggedIn = false
+                            navController.navigate(AppDestination.Login.route) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 }

@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import com.android.staymates.data.models.Profile
 import com.android.staymates.data.repositories.AuthRepository
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -197,7 +196,7 @@ fun RegisterScreen(
                                 coroutineScope.launch {
                                     try {
                                         val profile = Profile(
-                                            id = UUID.randomUUID().toString(),
+                                            id = "",
                                             name = fullName,
                                             age = age.toIntOrNull() ?: 0,
                                             occupation = occupation,
