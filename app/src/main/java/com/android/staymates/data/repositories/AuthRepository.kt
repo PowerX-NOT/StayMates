@@ -41,10 +41,31 @@ class AuthRepository {
 
     suspend fun signIn(email: String, password: String): Boolean {
         try {
+            // Prevent false-positive "login" when an old session exists.
+            try {
+                client.auth.signOut()
+            } catch (_: Exception) {
+            }
+
             client.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
+
+            val user = client.auth.currentUserOrNull()
+                ?: throw Exception("Invalid email or password")
+
+            val normalizedInputEmail = email.trim().lowercase()
+            val normalizedUserEmail = user.email?.trim()?.lowercase()
+
+            if (normalizedUserEmail == null || normalizedUserEmail != normalizedInputEmail) {
+                try {
+                    client.auth.signOut()
+                } catch (_: Exception) {
+                }
+                throw Exception("Invalid email or password")
+            }
+
             ensureProfileExists()
             return true
         } catch (e: Exception) {

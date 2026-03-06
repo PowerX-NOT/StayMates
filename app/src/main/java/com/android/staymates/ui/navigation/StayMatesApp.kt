@@ -146,10 +146,13 @@ fun StayMatesApp() {
             composable(AppDestination.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        userId = authRepository.getCurrentUserId()
-                        isLoggedIn = true
-                        navController.navigate(AppDestination.Listings.route) {
-                            popUpTo(AppDestination.Login.route) { inclusive = true }
+                        val newUserId = authRepository.getCurrentUserId()
+                        if (newUserId != null) {
+                            userId = newUserId
+                            isLoggedIn = true
+                            navController.navigate(AppDestination.Listings.route) {
+                                popUpTo(AppDestination.Login.route) { inclusive = true }
+                            }
                         }
                     },
                     onNavigateToRegister = {
