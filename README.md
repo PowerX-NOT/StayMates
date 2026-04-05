@@ -7,10 +7,10 @@ Student-focused **Rental Property & Roommate Finder** Android app.
 - Listings feed (search + create listing + details)
 - Bottom navigation: Listings, Matches, Chat, Split, Profile
 - Material 3 UI with **Dynamic Color (Material You / wallpaper-based)** on Android 12+
+- Client-side roommate matching (computed in-app from profile data)
 
 ## Planned / in progress
 
-- Preference-based roommate matching
 - Verified listings
 - Real-time chat
 - Rent split calculator (advanced)
@@ -50,18 +50,36 @@ Student-focused **Rental Property & Roommate Finder** Android app.
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Supabase configuration
+### Local `.env` (required for build)
 
-This repo contains Supabase-related code (`SupabaseClient`, repositories, and serializable models).
+The app build reads Supabase settings from a root `.env` file and exposes them via `BuildConfig`.
 
-Best practice is to **avoid committing secrets** (anon keys, service keys) into source control.
+1. Copy the template:
 
-Recommended approach:
+```bash
+cp .env.example .env
+```
 
-- Store `SUPABASE_URL` and `SUPABASE_ANON_KEY` in a local, untracked config (example: `.env`)
-- Read them via `BuildConfig` / Gradle properties (so you can have different values per build type)
+2. Fill in values:
 
-If you want, I can refactor `SupabaseClient` to read from `BuildConfig` instead of hardcoded values.
+```bash
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+```
+
+Notes:
+
+- `.env` is gitignored and should stay local.
+- If `.env` is missing (or variables are empty), Gradle will fail with a clear error.
+
+### Matching implementation note
+
+Matching is computed client-side by fetching:
+
+- The current user profile from `profiles`
+- A pool of other profiles from `profiles`
+
+The app computes match scores locally and sorts descending. There is no dependency on a `matches` table.
 
 ## Contributing
 
