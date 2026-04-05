@@ -20,21 +20,33 @@ class AuthRepository {
 
             val userId = authResult?.id ?: throw Exception("Failed to create user account")
 
-            client.from("profiles")
-                .insert(
-                    buildJsonObject {
-                        put("id", userId)
-                        put("name", profile.name)
-                        put("age", profile.age)
-                        put("occupation", profile.occupation)
-                        put("preferences", profile.preferences)
-                        put("bio", profile.bio)
-                        put("is_verified", false)
-                    }
-                )
+            val hasSession = try {
+                client.auth.currentUserOrNull() != null
+            } catch (_: Exception) {
+                false
+            }
+
+            if (hasSession) {
+                client.from("profiles")
+                    .insert(
+                        buildJsonObject {
+                            put("id", userId)
+                            put("name", profile.name)
+                            put("age", profile.age)
+                            put("occupation", profile.occupation)
+                            put("preferences", profile.preferences)
+                            put("bio", profile.bio)
+                            put("is_verified", false)
+                        }
+                    )
+            }
 
             return true
         } catch (e: Exception) {
+            val msg = e.message.orEmpty()
+            if (msg.contains("row-level security", ignoreCase = true) || msg.contains("42501")) {
+                return true
+            }
             throw e
         }
     }

@@ -55,11 +55,10 @@ fun StayMatesApp() {
     val coroutineScope = rememberCoroutineScope()
 
     var userId by remember { mutableStateOf(authRepository.getCurrentUserId()) }
-    var isLoggedIn by remember { mutableStateOf(userId != null) }
+    val isLoggedIn = userId != null
 
     LaunchedEffect(Unit) {
         userId = authRepository.getCurrentUserId()
-        isLoggedIn = userId != null
     }
 
     val listings = remember {
@@ -149,7 +148,6 @@ fun StayMatesApp() {
                         val newUserId = authRepository.getCurrentUserId()
                         if (newUserId != null) {
                             userId = newUserId
-                            isLoggedIn = true
                             navController.navigate(AppDestination.Listings.route) {
                                 popUpTo(AppDestination.Login.route) { inclusive = true }
                             }
@@ -164,10 +162,17 @@ fun StayMatesApp() {
             composable(AppDestination.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        userId = authRepository.getCurrentUserId()
-                        isLoggedIn = true
-                        navController.navigate(AppDestination.Listings.route) {
-                            popUpTo(AppDestination.Login.route) { inclusive = true }
+                        val newUserId = authRepository.getCurrentUserId()
+                        if (newUserId != null) {
+                            userId = newUserId
+                            navController.navigate(AppDestination.Listings.route) {
+                                popUpTo(AppDestination.Login.route) { inclusive = true }
+                            }
+                        } else {
+                            userId = null
+                            navController.navigate(AppDestination.Login.route) {
+                                popUpTo(AppDestination.Register.route) { inclusive = true }
+                            }
                         }
                     },
                     onBack = { navController.popBackStack() }
@@ -256,7 +261,6 @@ fun StayMatesApp() {
                         coroutineScope.launch {
                             authRepository.signOut()
                             userId = null
-                            isLoggedIn = false
                             navController.navigate(AppDestination.Login.route) {
                                 popUpTo(0) { inclusive = true }
                             }

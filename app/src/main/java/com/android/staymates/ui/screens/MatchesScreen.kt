@@ -42,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.android.staymates.data.models.MatchWithProfile
 import com.android.staymates.data.repositories.MatchRepository
 import kotlinx.coroutines.launch
 
@@ -50,7 +49,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MatchesScreen(userId: String?) {
     val coroutineScope = rememberCoroutineScope()
-    var matches by remember { mutableStateOf<List<MatchWithProfile>>(emptyList()) }
+    var matches by remember { mutableStateOf<List<MatchRepository.ProfileMatch>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -136,8 +135,8 @@ fun MatchesScreen(userId: String?) {
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(matches, key = { it.match.id }) { matchWithProfile ->
-                        MatchCard(matchWithProfile = matchWithProfile)
+                    items(matches, key = { it.profile.id }) { match ->
+                        MatchCard(match = match)
                     }
                 }
             }
@@ -146,9 +145,8 @@ fun MatchesScreen(userId: String?) {
 }
 
 @Composable
-private fun MatchCard(matchWithProfile: MatchWithProfile) {
-    val profile = matchWithProfile.profile
-    val match = matchWithProfile.match
+private fun MatchCard(match: MatchRepository.ProfileMatch) {
+    val profile = match.profile
     Card(
         modifier = Modifier
             .fillMaxWidth()

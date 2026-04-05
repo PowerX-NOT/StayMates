@@ -5,12 +5,37 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+import org.gradle.api.GradleException
+import java.io.File
+
 android {
     namespace = "com.android.staymates"
     compileSdk = 36
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    val dotEnvFile = File(rootProject.projectDir, ".env")
+    val dotEnv: Map<String, String> = if (dotEnvFile.exists()) {
+        dotEnvFile
+            .readLines()
+            .asSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .filterNot { it.startsWith("#") }
+            .mapNotNull { line ->
+                val idx = line.indexOf('=')
+                if (idx <= 0) null else {
+                    val key = line.substring(0, idx).trim()
+                    val value = line.substring(idx + 1).trim().trim('"').trim('\'')
+                    key to value
+                }
+            }
+            .toMap()
+    } else {
+        emptyMap()
     }
 
     defaultConfig {
@@ -21,6 +46,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val supabaseUrl = dotEnv["SUPABASE_URL"] ?: System.getenv("SUPABASE_URL")
+        val supabaseAnonKey = dotEnv["SUPABASE_ANON_KEY"] ?: System.getenv("SUPABASE_ANON_KEY")
+
+        if (supabaseUrl.isNullOrBlank()) {
+            throw GradleException("Missing SUPABASE_URL. Add it to .env (root) or export SUPABASE_URL before building.")
+        }
+        if (supabaseAnonKey.isNullOrBlank()) {
+            throw GradleException("Missing SUPABASE_ANON_KEY. Add it to .env (root) or export SUPABASE_ANON_KEY before building.")
+        }
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     buildTypes {

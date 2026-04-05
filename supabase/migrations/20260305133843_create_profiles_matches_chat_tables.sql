@@ -1,5 +1,5 @@
 /*
-  # Create profiles, matches, and chat tables
+  # Create profiles and chat tables
 
   1. New Tables
     - `profiles`
@@ -12,14 +12,6 @@
       - `is_verified` (boolean) - Email verification status
       - `created_at` (timestamptz) - Profile creation timestamp
       - `updated_at` (timestamptz) - Last update timestamp
-
-    - `matches`
-      - `id` (uuid, primary key) - Match ID
-      - `user_id` (uuid) - First user in the match
-      - `matched_user_id` (uuid) - Second user in the match
-      - `match_score` (int) - Compatibility score (0-100)
-      - `status` (text) - Match status: 'pending', 'accepted', 'rejected'
-      - `created_at` (timestamptz) - Match creation timestamp
 
     - `conversations`
       - `id` (uuid, primary key) - Conversation ID
@@ -39,7 +31,6 @@
   2. Security
     - Enable RLS on all tables
     - Add policies for authenticated users to manage their own data
-    - Users can read profiles of their matches
     - Users can only access conversations they're part of
     - Users can only send messages in their own conversations
 
@@ -63,17 +54,6 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create matches table
-CREATE TABLE IF NOT EXISTS matches (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  matched_user_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  match_score int NOT NULL CHECK (match_score >= 0 AND match_score <= 100),
-  status text DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(user_id, matched_user_id)
-);
-
 -- Create conversations table
 CREATE TABLE IF NOT EXISTS conversations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -95,8 +75,6 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_matches_user_id ON matches(user_id);
-CREATE INDEX IF NOT EXISTS idx_matches_matched_user_id ON matches(matched_user_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_participant_1 ON conversations(participant_1_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_participant_2 ON conversations(participant_2_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
@@ -104,7 +82,6 @@ CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
@@ -127,28 +104,6 @@ CREATE POLICY "Users can update their own profile"
 
 CREATE POLICY "Users can delete their own profile"
   ON profiles FOR DELETE
-  TO authenticated
-  USING (true);
-
--- RLS Policies for matches
-CREATE POLICY "Users can view their matches"
-  ON matches FOR SELECT
-  TO authenticated
-  USING (true);
-
-CREATE POLICY "Users can create matches"
-  ON matches FOR INSERT
-  TO authenticated
-  WITH CHECK (true);
-
-CREATE POLICY "Users can update their matches"
-  ON matches FOR UPDATE
-  TO authenticated
-  USING (true)
-  WITH CHECK (true);
-
-CREATE POLICY "Users can delete their matches"
-  ON matches FOR DELETE
   TO authenticated
   USING (true);
 
@@ -204,13 +159,6 @@ INSERT INTO profiles (id, name, age, occupation, preferences, bio, is_verified) 
   ('550e8400-e29b-41d4-a716-446655440004', 'Rahul Verma', 23, 'Graphic Designer', 'Creative, night owl, music lover', 'Designer by day, musician by night. Need someone who appreciates creativity.', true),
   ('550e8400-e29b-41d4-a716-446655440005', 'Ananya Iyer', 25, 'Data Analyst', 'Introvert, book lover, prefers quiet environment', 'Working professional seeking peaceful living space with minimal drama.', true)
 ON CONFLICT (id) DO NOTHING;
-
--- Insert sample matches (assuming current user is profile 1)
-INSERT INTO matches (user_id, matched_user_id, match_score, status) VALUES
-  ('550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', 92, 'accepted'),
-  ('550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440003', 85, 'pending'),
-  ('550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440004', 78, 'pending')
-ON CONFLICT DO NOTHING;
 
 -- Insert sample conversations
 INSERT INTO conversations (id, participant_1_id, participant_2_id, updated_at) VALUES
