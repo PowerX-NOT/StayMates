@@ -44,6 +44,11 @@ class AuthRepository {
             return true
         } catch (e: Exception) {
             val msg = e.message.orEmpty()
+            if (msg.contains("over_email_send_rate_limit", ignoreCase = true) ||
+                msg.contains("email rate limit exceeded", ignoreCase = true)
+            ) {
+                throw Exception("Email rate limit exceeded. Please wait a bit and try again, or use a different email address.")
+            }
             if (msg.contains("row-level security", ignoreCase = true) || msg.contains("42501")) {
                 return true
             }
