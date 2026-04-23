@@ -7,28 +7,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -42,12 +44,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.android.staymates.data.models.Conversation
 import com.android.staymates.data.models.Message
 import com.android.staymates.data.models.Profile
 import com.android.staymates.data.repositories.ChatRepository
+import com.android.staymates.ui.theme.GradientMid
+import com.android.staymates.ui.theme.GradientStart
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -63,10 +72,7 @@ fun ChatDetailScreen(
     val coroutineScope = rememberCoroutineScope()
 
     if (userId == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("User not logged in")
         }
         return
@@ -81,6 +87,7 @@ fun ChatDetailScreen(
     var messageText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
 
     fun loadMessages() {
         coroutineScope.launch {
@@ -88,16 +95,10 @@ fun ChatDetailScreen(
                 isLoading = true
                 messages = repository.getMessagesForConversation(conversationId)
                 conversation = repository.getConversation(conversationId)
-
                 conversation?.let { conv ->
-                    val otherUserId = if (conv.participant1Id == currentUserId) {
-                        conv.participant2Id
-                    } else {
-                        conv.participant1Id
-                    }
+                    val otherUserId = if (conv.participant1Id == currentUserId) conv.participant2Id else conv.participant1Id
                     otherParticipant = repository.getProfile(otherUserId)
                 }
-
                 repository.markMessagesAsRead(conversationId, currentUserId)
                 error = null
             } catch (e: Exception) {
@@ -108,87 +109,113 @@ fun ChatDetailScreen(
         }
     }
 
-    LaunchedEffect(conversationId) {
-        loadMessages()
+    LaunchedEffect(conversationId) { loadMessages() }
+
+    // Auto-scroll to bottom when messages load
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
     }
 
+    val (avatarA, avatarB) = avatarColors(otherParticipant?.name ?: "?")
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
-                    Text(otherParticipant?.name ?: "Chat")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Mini avatar
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Brush.linearGradient(listOf(avatarA, avatarB))),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = (otherParticipant?.name ?: "?").take(2).uppercase(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                otherParticipant?.name ?: "Chat",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (otherParticipant?.occupation?.isNotBlank() == true) {
+                                Text(
+                                    otherParticipant!!.occupation,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 },
-                windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
         bottomBar = {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(0.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .imePadding(),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                        .imePadding(),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type a message") },
-                        maxLines = 5,
+                OutlinedTextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Type a message…", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    maxLines = 5,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = {
-                            if (messageText.isNotBlank()) {
-                                coroutineScope.launch {
-                                    try {
-                                        repository.sendMessage(
-                                            conversationId = conversationId,
-                                            senderId = currentUserId,
-                                            content = messageText.trim()
-                                        )
-                                        messageText = ""
-                                        loadMessages()
-                                    } catch (e: Exception) {
-                                        error = e.message
-                                    }
+                )
+                Spacer(Modifier.width(8.dp))
+                FloatingActionButton(
+                    onClick = {
+                        if (messageText.isNotBlank()) {
+                            val text = messageText
+                            messageText = ""
+                            coroutineScope.launch {
+                                try {
+                                    repository.sendMessage(conversationId, currentUserId, text.trim())
+                                    loadMessages()
+                                } catch (e: Exception) {
+                                    error = e.message
                                 }
                             }
-                        },
-                        enabled = messageText.isNotBlank()
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = if (messageText.isNotBlank()) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
+                        }
+                    },
+                    modifier = Modifier.size(52.dp),
+                    containerColor = if (messageText.isNotBlank()) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = if (messageText.isNotBlank()) Color.White
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                 }
             }
         }
@@ -196,24 +223,19 @@ fun ChatDetailScreen(
         when {
             isLoading -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             }
             error != null -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Error loading messages: $error",
+                        "Error: $error",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -221,30 +243,30 @@ fun ChatDetailScreen(
             }
             messages.isEmpty() -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No messages yet. Start the conversation!",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("👋", fontSize = 48.sp)
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            "Say hello to ${otherParticipant?.name ?: "your match"}!",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             else -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    reverseLayout = false
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     items(messages, key = { it.id }) { message ->
-                        MessageBubble(
+                        ChatBubble(
                             message = message,
                             isCurrentUser = message.senderId == currentUserId
                         )
@@ -256,7 +278,7 @@ fun ChatDetailScreen(
 }
 
 @Composable
-private fun MessageBubble(
+private fun ChatBubble(
     message: Message,
     isCurrentUser: Boolean
 ) {
@@ -264,58 +286,56 @@ private fun MessageBubble(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start
     ) {
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isCurrentUser) 16.dp else 4.dp,
-                bottomEnd = if (isCurrentUser) 4.dp else 16.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isCurrentUser) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                }
-            )
+        Box(
+            modifier = Modifier
+                .widthIn(max = 290.dp)
+                .clip(
+                    RoundedCornerShape(
+                        topStart = 20.dp,
+                        topEnd = 20.dp,
+                        bottomStart = if (isCurrentUser) 20.dp else 4.dp,
+                        bottomEnd = if (isCurrentUser) 4.dp else 20.dp
+                    )
+                )
+                .background(
+                    if (isCurrentUser)
+                        Brush.linearGradient(
+                            colors = listOf(GradientStart, GradientMid),
+                            start = Offset(0f, 0f),
+                            end = Offset(Float.POSITIVE_INFINITY, 0f)
+                        )
+                    else
+                        Brush.linearGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.surfaceContainerHigh,
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                            )
+                        )
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
+            Column {
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
+                    color = if (isCurrentUser) Color.White else MaterialTheme.colorScheme.onSurface
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
+                Spacer(Modifier.height(3.dp))
                 Text(
-                    text = formatTimestamp(message.createdAt),
+                    text = formatMessageTime(message.createdAt),
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isCurrentUser) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    color = if (isCurrentUser) Color.White.copy(alpha = 0.7f)
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
         }
     }
 }
 
-private fun formatTimestamp(timestamp: String): String {
+private fun formatMessageTime(timestamp: String): String {
     return try {
         val instant = Instant.parse(timestamp)
-        val formatter = DateTimeFormatter.ofPattern("HH:mm")
-            .withZone(ZoneId.systemDefault())
-        formatter.format(instant)
-    } catch (_: Exception) {
-        timestamp
-    }
+        DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(instant)
+    } catch (_: Exception) { timestamp }
 }
