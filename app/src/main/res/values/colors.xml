@@ -2,4 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Brand seed color for window background tinting -->
+    <color name="colorPrimary">#5C6BC0</color>
+    <color name="colorBackground">#F8F7FF</color>
 </resources>
