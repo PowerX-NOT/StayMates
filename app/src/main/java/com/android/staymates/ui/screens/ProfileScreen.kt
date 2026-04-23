@@ -1,5 +1,6 @@
 package com.android.staymates.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,13 +15,18 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -37,7 +43,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -49,11 +54,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.android.staymates.data.models.Profile
 import com.android.staymates.data.repositories.AuthRepository
+import com.android.staymates.ui.theme.GradientEnd
+import com.android.staymates.ui.theme.GradientMid
+import com.android.staymates.ui.theme.GradientStart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,21 +84,12 @@ fun ProfileScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
-        isLoading = true
-        error = null
-        userProfile = null
-
-        if (userId == null) {
-            isLoading = false
-            return@LaunchedEffect
-        }
-
+        isLoading = true; error = null; userProfile = null
+        if (userId == null) { isLoading = false; return@LaunchedEffect }
         val repository = AuthRepository()
         try {
             userProfile = repository.getProfile(userId)
-            if (userProfile == null) {
-                error = "Profile not found"
-            }
+            if (userProfile == null) error = "Profile not found"
         } catch (e: Exception) {
             error = e.message
         } finally {
@@ -93,198 +98,222 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         if (isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .verticalScroll(rememberScrollState())
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                // ── Gradient header ────────────────────────────────────────────
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(GradientStart, GradientMid, GradientEnd),
+                                start = Offset(0f, 0f),
+                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(80.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        // Avatar with initials
+                        val name = userProfile?.name ?: "G"
+                        Box(
+                            modifier = Modifier
+                                .size(90.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = null,
-                                modifier = Modifier.padding(20.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            Text(
+                                text = name.take(2).uppercase(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(Modifier.height(10.dp))
 
                         Text(
                             text = userProfile?.name ?: "Guest User",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        val subtitle = listOfNotNull(
+                            userProfile?.age?.takeIf { it > 0 }?.toString(),
+                            userProfile?.occupation?.takeIf { it.isNotBlank() }
+                        ).joinToString(" · ")
 
-                        if (error != null) {
+                        if (subtitle.isNotEmpty()) {
+                            Spacer(Modifier.height(4.dp))
                             Text(
-                                text = error ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
-
-                        val profileSnapshot = userProfile
-                        if (profileSnapshot != null) {
-                            Text(
-                                text = "${profileSnapshot.age} • ${profileSnapshot.occupation}",
+                                text = subtitle,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = Color.White.copy(alpha = 0.85f)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                         }
 
+                        Spacer(Modifier.height(8.dp))
+
+                        // Verified chip
+                        val isVerified = userProfile?.isVerified == true
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.2f))
+                                .padding(horizontal = 14.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (userProfile?.isVerified == true) {
-                                Icon(
-                                    imageVector = Icons.Filled.CheckCircle,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = if (isVerified) Icons.Filled.CheckCircle else Icons.Filled.Email,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(5.dp))
                             Text(
-                                text = if (userProfile?.isVerified == true) "Verified" else "Not verified",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = if (isVerified) "Verified" else "Not Verified",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
                 }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    // Error banner
+                    if (error != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.errorContainer)
+                                .padding(14.dp)
+                        ) {
+                            Text(
+                                text = error!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+
+                    // Complete profile nudge
+                    if (userProfile?.isVerified == false) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.tertiaryContainer,
+                                            MaterialTheme.colorScheme.secondaryContainer
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    "✨ Complete your profile",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    "Verify your email to get a verified badge and more matches.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    // Account settings
+                    ProfileMenuSection(title = "Account") {
                         ProfileMenuItem(
                             icon = Icons.Filled.Person,
-                            title = "Personal information",
+                            title = "Personal Information",
                             subtitle = "Name, age, occupation",
                             onClick = onNavigatePersonalInfo,
+                            isFirst = true, isLast = false
                         )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         ProfileMenuItem(
                             icon = Icons.Filled.Settings,
                             title = "Preferences",
-                            subtitle = "Roommate preferences and lifestyle",
+                            subtitle = "Roommate preferences & lifestyle",
                             onClick = onNavigatePreferences,
+                            isFirst = false, isLast = true
                         )
                     }
-                }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    // Listings & Verification
+                    ProfileMenuSection(title = "Listings & Verification") {
                         ProfileMenuItem(
                             icon = Icons.Filled.Email,
-                            title = "Verify email",
-                            subtitle = "Get verified badge",
+                            title = "Verify Email",
+                            subtitle = "Get your verified badge",
                             onClick = onNavigateVerifyEmail,
+                            isFirst = true, isLast = false
                         )
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         ProfileMenuItem(
-                            icon = Icons.Filled.CheckCircle,
-                            title = "My listings",
+                            icon = Icons.Filled.ListAlt,
+                            title = "My Listings",
                             subtitle = "View and manage your listings",
                             onClick = onNavigateMyListings,
+                            isFirst = false, isLast = true
                         )
                     }
-                }
 
-                if (userProfile?.isVerified == false) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    // Logout
+                    Button(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Complete your profile",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Add your preferences and verify your email to get better matches and more visibility.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            )
-                        }
+                        Icon(
+                            Icons.Filled.Logout,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Logout",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
                     }
-                }
 
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Logout,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout")
+                    Spacer(Modifier.height(16.dp))
                 }
             }
         }
@@ -292,48 +321,96 @@ fun ProfileScreen(
 }
 
 @Composable
+private fun ProfileMenuSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
 private fun ProfileMenuItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
+    isFirst: Boolean,
+    isLast: Boolean,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-        )
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(14.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!isLast) {
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+        }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-screens
+// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -342,133 +419,111 @@ fun ProfilePersonalInfoScreen(
     onBack: () -> Unit,
 ) {
     val repository = remember { AuthRepository() }
-
     var name by remember { mutableStateOf("") }
     var ageText by remember { mutableStateOf("") }
     var occupation by remember { mutableStateOf("") }
-
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showSavedDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
-        isLoading = true
-        error = null
+        isLoading = true; error = null
         try {
             val profile = repository.getProfile(userId)
             name = profile?.name.orEmpty()
             ageText = profile?.age?.takeIf { it > 0 }?.toString().orEmpty()
             occupation = profile?.occupation.orEmpty()
-        } catch (e: Exception) {
-            error = e.message
-        } finally {
-            isLoading = false
-        }
+        } catch (e: Exception) { error = e.message } finally { isLoading = false }
     }
 
     if (showSavedDialog) {
         AlertDialog(
             onDismissRequest = { showSavedDialog = false },
-            confirmButton = {
-                Button(onClick = { showSavedDialog = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Saved") },
-            text = { Text("Your profile was updated.") },
+            confirmButton = { Button(onClick = { showSavedDialog = false }) { Text("OK") } },
+            title = { Text("Saved ✓") },
+            text = { Text("Your profile was updated successfully.") }
         )
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Personal information") },
+                title = { Text("Personal Information", fontWeight = FontWeight.Bold) },
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack, enabled = !isSaving) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
-        },
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(20.dp)
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
                 return@Column
             }
 
             if (error != null) {
-                Text(
-                    text = error ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(14.dp)
+                ) {
+                    Text(error ?: "", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                }
             }
 
-            OutlinedTextField(
+            StyledTextField(
                 value = name,
                 onValueChange = { name = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Name") },
-                singleLine = true,
-                enabled = !isSaving,
+                label = "Full Name",
+                leadingIcon = { Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.primary) },
+                enabled = !isSaving
             )
-
-            OutlinedTextField(
+            StyledTextField(
                 value = ageText,
-                onValueChange = { ageText = it.filter { ch -> ch.isDigit() }.take(3) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Age") },
-                singleLine = true,
+                onValueChange = { ageText = it.filter { c -> c.isDigit() }.take(3) },
+                label = "Age",
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                enabled = !isSaving,
+                enabled = !isSaving
             )
-
-            OutlinedTextField(
+            StyledTextField(
                 value = occupation,
                 onValueChange = { occupation = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Occupation") },
-                singleLine = true,
-                enabled = !isSaving,
+                label = "Occupation",
+                enabled = !isSaving
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.weight(1f))
 
             Button(
-                onClick = {
-                    error = null
-                    isSaving = true
-                },
-                modifier = Modifier.fillMaxWidth(),
+                onClick = { error = null; isSaving = true },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 enabled = !isSaving,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.5.dp)
                 } else {
-                    Text("Save")
+                    Text("Save Changes", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 
@@ -482,14 +537,10 @@ fun ProfilePersonalInfoScreen(
                         age = ageText.toIntOrNull() ?: 0,
                         occupation = occupation.trim(),
                         preferences = current?.preferences.orEmpty(),
-                        bio = current?.bio.orEmpty(),
+                        bio = current?.bio.orEmpty()
                     )
                     showSavedDialog = true
-                } catch (e: Exception) {
-                    error = e.message
-                } finally {
-                    isSaving = false
-                }
+                } catch (e: Exception) { error = e.message } finally { isSaving = false }
             }
         }
     }
@@ -502,92 +553,71 @@ fun ProfilePreferencesScreen(
     onBack: () -> Unit,
 ) {
     val repository = remember { AuthRepository() }
-
     var preferences by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
-
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showSavedDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
-        isLoading = true
-        error = null
+        isLoading = true; error = null
         try {
             val profile = repository.getProfile(userId)
             preferences = profile?.preferences.orEmpty()
             bio = profile?.bio.orEmpty()
-        } catch (e: Exception) {
-            error = e.message
-        } finally {
-            isLoading = false
-        }
+        } catch (e: Exception) { error = e.message } finally { isLoading = false }
     }
 
     if (showSavedDialog) {
         AlertDialog(
             onDismissRequest = { showSavedDialog = false },
-            confirmButton = {
-                Button(onClick = { showSavedDialog = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Saved") },
-            text = { Text("Your preferences were updated.") },
+            confirmButton = { Button(onClick = { showSavedDialog = false }) { Text("OK") } },
+            title = { Text("Saved ✓") },
+            text = { Text("Your preferences were updated.") }
         )
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Preferences") },
+                title = { Text("Preferences", fontWeight = FontWeight.Bold) },
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack, enabled = !isSaving) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
-        },
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(20.dp)
                 .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 return@Column
-            }
-
-            if (error != null) {
-                Text(
-                    text = error ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
             }
 
             OutlinedTextField(
                 value = preferences,
                 onValueChange = { preferences = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Roommate preferences") },
-                minLines = 3,
+                label = { Text("Roommate Preferences") },
+                placeholder = { Text("e.g. Non-smoker, pet-friendly, quiet hours…") },
+                minLines = 4,
                 enabled = !isSaving,
+                shape = RoundedCornerShape(16.dp),
+                colors = styledTextFieldColors()
             )
 
             OutlinedTextField(
@@ -595,28 +625,26 @@ fun ProfilePreferencesScreen(
                 onValueChange = { bio = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Bio") },
-                minLines = 3,
+                placeholder = { Text("Tell future roommates about yourself…") },
+                minLines = 4,
                 enabled = !isSaving,
+                shape = RoundedCornerShape(16.dp),
+                colors = styledTextFieldColors()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.weight(1f))
 
             Button(
-                onClick = {
-                    error = null
-                    isSaving = true
-                },
-                modifier = Modifier.fillMaxWidth(),
+                onClick = { error = null; isSaving = true },
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 enabled = !isSaving,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.5.dp)
                 } else {
-                    Text("Save")
+                    Text("Save Preferences", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 
@@ -630,13 +658,63 @@ fun ProfilePreferencesScreen(
                         age = current?.age ?: 0,
                         occupation = current?.occupation.orEmpty(),
                         preferences = preferences.trim(),
-                        bio = bio.trim(),
+                        bio = bio.trim()
                     )
                     showSavedDialog = true
-                } catch (e: Exception) {
-                    error = e.message
-                } finally {
-                    isSaving = false
+                } catch (e: Exception) { error = e.message } finally { isSaving = false }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileVerifyEmailScreen(onBack: () -> Unit) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text("Verify Email", fontWeight = FontWeight.Bold) },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                    )
+                    .padding(24.dp)
+            ) {
+                Column {
+                    Text("📧", fontSize = 40.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "How to get verified",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Open your inbox and confirm the email we sent you. After verifying, log out and sign in again to see your verified badge.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
                 }
             }
         }
@@ -645,111 +723,40 @@ fun ProfilePreferencesScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileVerifyEmailScreen(
-    onBack: () -> Unit,
-) {
+fun ProfileMyListingsScreen(onBack: () -> Unit) {
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Verify email") },
+                title = { Text("My Listings", fontWeight = FontWeight.Bold) },
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
-        },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "How verification works",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Open your inbox and confirm your email. After verification, logout and login again.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfileMyListingsScreen(
-    onBack: () -> Unit,
-) {
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface,
-        topBar = {
-            TopAppBar(
-                title = { Text("My listings") },
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding).padding(20.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Coming soon",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "This will show the listings you created and allow you to edit or delete them.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🏗️", fontSize = 52.sp)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Coming soon",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "This will show your listings and let you edit or remove them.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
