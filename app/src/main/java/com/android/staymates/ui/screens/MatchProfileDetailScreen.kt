@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
@@ -115,7 +116,32 @@ fun MatchProfileDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Profile",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = GradientStart,
+                    scrolledContainerColor = GradientStart
+                )
+            )
+        }
     ) { innerPadding ->
         when {
             isLoading -> {
@@ -145,8 +171,9 @@ fun MatchProfileDetailScreen(
                         .fillMaxSize()
                         .padding(bottom = innerPadding.calculateBottomPadding())
                         .verticalScroll(rememberScrollState())
+                        .padding(bottom = 32.dp)
                 ) {
-                    // ── Hero header ────────────────────────────────────────────
+                    // ── Hero header (starts immediately under the gradient top bar) ──
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -157,32 +184,10 @@ fun MatchProfileDetailScreen(
                                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                                 )
                             )
-                            .padding(bottom = 36.dp),
+                            .padding(top = 24.dp, bottom = 36.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            TopAppBar(
-                                title = { 
-                                    Text(
-                                        "Profile", 
-                                        style = MaterialTheme.typography.titleLarge, 
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White
-                                    ) 
-                                },
-                                navigationIcon = {
-                                    IconButton(onClick = onBack) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                                    }
-                                },
-                                colors = TopAppBarDefaults.topAppBarColors(
-                                    containerColor = Color.Transparent,
-                                    scrolledContainerColor = Color.Transparent
-                                )
-                            )
-
-                            Spacer(Modifier.height(12.dp))
-
                             // Large avatar
                             Box(
                                 modifier = Modifier
@@ -356,7 +361,7 @@ fun MatchProfileDetailScreen(
                                 } else {
                                     Icon(
                                         if (conversationId != null) Icons.AutoMirrored.Filled.Chat
-                                        else Icons.AutoMirrored.Filled.Send,
+                                        else Icons.Filled.Send,
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp)
                                     )
