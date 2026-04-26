@@ -118,17 +118,36 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp)
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(GradientStart, GradientMid, GradientEnd),
                                 start = Offset(0f, 0f),
                                 end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                             )
-                        ),
-                    contentAlignment = Alignment.Center
+                        )
+                        .padding(bottom = 24.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Custom integrated top bar
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Profile",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        
+                        Spacer(Modifier.height(8.dp))
+
                         // Avatar with initials
                         val name = userProfile?.name ?: "G"
                         Box(
