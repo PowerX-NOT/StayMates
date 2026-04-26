@@ -25,10 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
@@ -119,26 +119,14 @@ fun MatchProfileDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "Profile",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
-                    )
-                },
+                title = { Text("Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = GradientStart,
-                    scrolledContainerColor = GradientStart
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -169,11 +157,10 @@ fun MatchProfileDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding(bottom = innerPadding.calculateBottomPadding())
                         .verticalScroll(rememberScrollState())
-                        .padding(bottom = 32.dp)
                 ) {
-                    // ── Hero header ──────────────────────────────────────────────
+                    // ── Hero header ────────────────────────────────────────────
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -184,28 +171,21 @@ fun MatchProfileDetailScreen(
                                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                                 )
                             )
-                            .padding(top = 24.dp, bottom = 36.dp),
+                            .padding(top = 40.dp, bottom = 40.dp, start = 24.dp, end = 24.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            // Large avatar
+                            // Large avatar — single clean ring
                             Box(
                                 modifier = Modifier
-                                    .size(96.dp)
+                                    .size(92.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.35f),
-                                                Color.White.copy(alpha = 0.15f)
-                                            )
-                                        )
-                                    ),
+                                    .background(Color.White.copy(alpha = 0.18f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(88.dp)
+                                        .size(80.dp)
                                         .clip(CircleShape)
                                         .background(Brush.linearGradient(listOf(colorA, colorB))),
                                     contentAlignment = Alignment.Center
@@ -361,7 +341,7 @@ fun MatchProfileDetailScreen(
                                 } else {
                                     Icon(
                                         if (conversationId != null) Icons.AutoMirrored.Filled.Chat
-                                        else Icons.Filled.Send,
+                                        else Icons.AutoMirrored.Filled.Send,
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp)
                                     )
