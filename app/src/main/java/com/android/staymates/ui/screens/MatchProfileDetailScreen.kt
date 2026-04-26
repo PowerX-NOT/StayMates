@@ -169,11 +169,11 @@ fun MatchProfileDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding())
+                        .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
                         .padding(bottom = 32.dp)
                 ) {
-                    // ── Hero header (starts immediately under the gradient top bar) ──
+                    // ── Hero header ──────────────────────────────────────────────
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
