@@ -106,7 +106,6 @@ fun ChatDetailScreen(
     fun loadMessages() {
         coroutineScope.launch {
             try {
-                isLoading = true
                 messages = repository.getMessagesForConversation(conversationId)
                 conversation = repository.getConversation(conversationId)
                 conversation?.let { conv ->
