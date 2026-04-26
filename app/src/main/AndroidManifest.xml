@@ -15,6 +15,7 @@
         android:theme="@style/Theme.StayMates">
         <activity
             android:name="com.android.staymates.MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
