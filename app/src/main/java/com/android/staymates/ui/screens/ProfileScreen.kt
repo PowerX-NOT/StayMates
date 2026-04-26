@@ -23,11 +23,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -98,7 +98,22 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        "Profile",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                },
+                windowInsets = WindowInsets(0, 0, 0, 0),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
     ) { innerPadding ->
         if (isLoading) {
             Box(
@@ -118,36 +133,17 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(220.dp)
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(GradientStart, GradientMid, GradientEnd),
                                 start = Offset(0f, 0f),
                                 end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                             )
-                        )
-                        .padding(bottom = 24.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Custom integrated top bar
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Profile",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White
-                            )
-                        }
-                        
-                        Spacer(Modifier.height(8.dp))
-
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         // Avatar with initials
                         val name = userProfile?.name ?: "G"
                         Box(
@@ -298,7 +294,7 @@ fun ProfileScreen(
                             isFirst = true, isLast = false
                         )
                         ProfileMenuItem(
-                            icon = Icons.Filled.ListAlt,
+                            icon = Icons.AutoMirrored.Filled.ListAlt,
                             title = "My Listings",
                             subtitle = "View and manage your listings",
                             onClick = onNavigateMyListings,
@@ -319,7 +315,7 @@ fun ProfileScreen(
                         )
                     ) {
                         Icon(
-                            Icons.Filled.Logout,
+                            Icons.AutoMirrored.Filled.Logout,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
