@@ -43,6 +43,7 @@ import com.android.staymates.ui.screens.ListingDetailsScreen
 import com.android.staymates.ui.screens.ListingsScreen
 import com.android.staymates.ui.screens.LoginScreen
 import com.android.staymates.ui.screens.MatchesScreen
+import com.android.staymates.ui.screens.MatchProfileDetailScreen
 import com.android.staymates.ui.screens.ProfileScreen
 import com.android.staymates.ui.screens.ProfileMyListingsScreen
 import com.android.staymates.ui.screens.ProfilePersonalInfoScreen
@@ -238,7 +239,37 @@ fun StayMatesApp() {
             }
 
             composable(AppDestination.Matches.route) {
-                MatchesScreen(userId = userId)
+                MatchesScreen(
+                    userId = userId,
+                    onProfileClick = { profileId, matchScore ->
+                        navController.navigate(
+                            AppDestination.MatchProfileDetail.createRoute(profileId, matchScore)
+                        )
+                    }
+                )
+            }
+
+            composable(
+                route = AppDestination.MatchProfileDetail.route,
+                arguments = listOf(
+                    navArgument("profileId") { type = NavType.StringType },
+                    navArgument("matchScore") { type = NavType.IntType }
+                )
+            ) { backStackEntry ->
+                val profileId = backStackEntry.arguments?.getString("profileId") ?: ""
+                val matchScore = backStackEntry.arguments?.getInt("matchScore") ?: 0
+                MatchProfileDetailScreen(
+                    profileId = profileId,
+                    matchScore = matchScore,
+                    currentUserId = userId,
+                    onBack = { navController.popBackStack() },
+                    onOpenChat = { conversationId ->
+                        navController.navigate(AppDestination.ChatDetail.createRoute(conversationId)) {
+                            // Pop back to Matches so pressing back from chat goes there
+                            popUpTo(AppDestination.Matches.route)
+                        }
+                    }
+                )
             }
 
             composable(AppDestination.Chat.route) {

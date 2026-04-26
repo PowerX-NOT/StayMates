@@ -61,7 +61,10 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MatchesScreen(userId: String?) {
+fun MatchesScreen(
+    userId: String?,
+    onProfileClick: (profileId: String, matchScore: Int) -> Unit = { _, _ -> }
+) {
     val coroutineScope = rememberCoroutineScope()
     var matches by remember { mutableStateOf<List<MatchRepository.ProfileMatch>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -165,7 +168,10 @@ fun MatchesScreen(userId: String?) {
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(matches, key = { it.profile.id }) { match ->
-                        MatchCard(match = match)
+                        MatchCard(
+                            match = match,
+                            onClick = { onProfileClick(match.profile.id, match.matchScore) }
+                        )
                     }
                 }
             }
@@ -174,7 +180,7 @@ fun MatchesScreen(userId: String?) {
 }
 
 @Composable
-private fun MatchCard(match: MatchRepository.ProfileMatch) {
+private fun MatchCard(match: MatchRepository.ProfileMatch, onClick: () -> Unit = {}) {
     val profile = match.profile
     val (colorA, colorB) = avatarColors(profile.name)
 
@@ -193,7 +199,7 @@ private fun MatchCard(match: MatchRepository.ProfileMatch) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
