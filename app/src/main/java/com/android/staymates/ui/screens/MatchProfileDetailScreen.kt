@@ -125,6 +125,7 @@ fun MatchProfileDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -157,8 +158,9 @@ fun MatchProfileDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(bottom = innerPadding.calculateBottomPadding())
+                        .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
+                        .padding(bottom = 32.dp)
                 ) {
                     // ── Hero header ────────────────────────────────────────────
                     Box(
@@ -171,21 +173,28 @@ fun MatchProfileDetailScreen(
                                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                                 )
                             )
-                            .padding(top = 40.dp, bottom = 40.dp, start = 24.dp, end = 24.dp),
+                            .padding(vertical = 36.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            // Large avatar — single clean ring
+                            // Large avatar
                             Box(
                                 modifier = Modifier
-                                    .size(92.dp)
+                                    .size(96.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.18f)),
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(
+                                                Color.White.copy(alpha = 0.35f),
+                                                Color.White.copy(alpha = 0.15f)
+                                            )
+                                        )
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(80.dp)
+                                        .size(88.dp)
                                         .clip(CircleShape)
                                         .background(Brush.linearGradient(listOf(colorA, colorB))),
                                     contentAlignment = Alignment.Center
