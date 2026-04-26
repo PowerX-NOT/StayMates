@@ -180,4 +180,54 @@ class ChatRepository(private val userId: String) {
             null
         }
     }
+
+    /**
+     * Returns the existing conversation ID between [userId] and [otherUserId],
+     * or creates a new one and returns its ID.
+     */
+    suspend fun createOrGetConversation(otherUserId: String): String {
+        // Check if conversation already exists (userId as participant1)
+        val existingAsP1 = try {
+            client.from("conversations")
+                .select {
+                    filter {
+                        eq("participant_1_id", userId)
+                        eq("participant_2_id", otherUserId)
+                    }
+                }
+                .decodeList<Conversation>()
+                .firstOrNull()
+        } catch (_: Exception) { null }
+
+        if (existingAsP1 != null) return existingAsP1.id
+
+        // Check if conversation already exists (userId as participant2)
+        val existingAsP2 = try {
+            client.from("conversations")
+                .select {
+                    filter {
+                        eq("participant_1_id", otherUserId)
+                        eq("participant_2_id", userId)
+                    }
+                }
+                .decodeList<Conversation>()
+                .firstOrNull()
+        } catch (_: Exception) { null }
+
+        if (existingAsP2 != null) return existingAsP2.id
+
+        // Create a new conversation
+        val created = client.from("conversations")
+            .insert(
+                buildJsonObject {
+                    put("participant_1_id", userId)
+                    put("participant_2_id", otherUserId)
+                }
+            ) {
+                select()
+            }
+            .decodeSingle<Conversation>()
+
+        return created.id
+    }
 }

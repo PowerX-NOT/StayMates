@@ -41,6 +41,16 @@ class MatchRepository(private val userId: String) {
             .toList()
     }
 
+    suspend fun getProfileById(profileId: String): Profile? {
+        return try {
+            client.from("profiles")
+                .select {
+                    filter { eq("id", profileId) }
+                }
+                .decodeSingleOrNull<Profile>()
+        } catch (_: Exception) { null }
+    }
+
     private fun calculateMatchScore(a: Profile, b: Profile): Int {
         val ageScore = ageCompatibility(a.age, b.age)
         val keywordScore = keywordSimilarity(
