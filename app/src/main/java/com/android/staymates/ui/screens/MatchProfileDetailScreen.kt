@@ -115,20 +115,7 @@ fun MatchProfileDetailScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         when {
             isLoading -> {
@@ -156,9 +143,8 @@ fun MatchProfileDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding(bottom = innerPadding.calculateBottomPadding())
                         .verticalScroll(rememberScrollState())
-                        .padding(bottom = 32.dp)
                 ) {
                     // ── Hero header ────────────────────────────────────────────
                     Box(
@@ -171,10 +157,32 @@ fun MatchProfileDetailScreen(
                                     end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
                                 )
                             )
-                            .padding(vertical = 36.dp),
+                            .padding(bottom = 36.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            TopAppBar(
+                                title = { 
+                                    Text(
+                                        "Profile", 
+                                        style = MaterialTheme.typography.titleLarge, 
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White
+                                    ) 
+                                },
+                                navigationIcon = {
+                                    IconButton(onClick = onBack) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = Color.Transparent,
+                                    scrolledContainerColor = Color.Transparent
+                                )
+                            )
+
+                            Spacer(Modifier.height(12.dp))
+
                             // Large avatar
                             Box(
                                 modifier = Modifier
